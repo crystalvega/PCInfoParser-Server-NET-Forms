@@ -1,22 +1,328 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Security;
+using System.Security.Cryptography;
+using System.IO;
+using System.Collections.Concurrent;
+using System.Timers;
 
 namespace PCInfoParser_Server_NET_Forms
 {
     internal static class Program
     {
+        static List<TcpClient> clients = new List<TcpClient>();
+        static string password = "12qwaszx121QAZ2WSXEPLSSHOW";
         /// <summary>
         /// Главная точка входа для приложения.
         /// </summary>
         [STAThread]
-        static void Main()
+        static async Task Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            // Start the server on port 12345
+            AsyncTcpServer server = new(12345);
+            await server.StartAsync();
+            Console.WriteLine("Server started");
+            //while (true)
+            //{
+            //    TcpClient client = await server.AcceptTcpClientAsync();
+            //    clients.Add(client);
+            //    Console.WriteLine("Client connected");
+            //    await HandleClientRequestAsync(client, password);
+            //}
+
+            //Application.EnableVisualStyles();
+            //Application.SetCompatibleTextRenderingDefault(false);
+            //Application.Run(new Form1());
+        }
+        static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            // выполняем действия перед закрытием приложения
+            // например, сохраняем данные или закрываем соединения с базой данных
+
+            // e.Cancel = true; // можно отменить закрытие приложения, установив свойство e.Cancel в true
+        }
+        static async Task HandleClientRequestAsync(TcpClient client, string password)
+        {
+            try
+            {
+                // Process the client request
+                NetworkStream stream = client.GetStream();
+
+                byte[] buffer = new byte[1024];
+                int bytesReceived = await stream.ReadAsync(buffer, 0, buffer.Length);
+                string cipherText = Encoding.UTF8.GetString(buffer, 0, bytesReceived);
+                string receivedMessage = Cryptography.Decrypt(cipherText, password);
+                if (receivedMessage.StartsWith("VALIDATION"))
+                {
+                    Console.WriteLine("Received message from client " + client.Client.RemoteEndPoint.ToString() + ": " + receivedMessage);
+                    string responseMessage = "VALID";
+                    string encryptedMessage = Cryptography.Encrypt(responseMessage, password);
+                    byte[] responseBytes = Encoding.UTF8.GetBytes(encryptedMessage);
+                    await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
+                }
+                else if (receivedMessage == "CHECKCON")
+                {
+                    Console.WriteLine("Received message from client " + client.Client.RemoteEndPoint.ToString() + ": " + receivedMessage);
+                }
+                else
+                {
+                    throw new CryptographicException("Неверный пароль");
+                }
+            }
+            catch (CryptographicException)
+            {
+                Console.WriteLine("Неверный пароль");
+                client.Close();
+                clients.Remove(client);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
+    }
+
+public class AsyncTcpServer
+    {
+        private readonly int port;
+        private readonly TcpListener listener;
+        static string password = "12qwaszx121QAZ2WSXEPLSSHOW";
+        private readonly ConcurrentDictionary<int, TcpClient> clients = new ConcurrentDictionary<int, TcpClient>();
+        private int nextClientId = 0;
+        string[,] clientsinfo = new string[400000,3];
+
+        public AsyncTcpServer(int port)
+        {
+            this.port = port;
+            listener = new TcpListener(IPAddress.Any, port);
+        }
+
+        public async Task StartAsync()
+        {
+            listener.Start();
+            Console.WriteLine($"Server started listening on port {port}.");
+
+            while (true)
+            {
+                TcpClient client = await listener.AcceptTcpClientAsync();
+                Console.WriteLine($"Client connected from {client.Client.RemoteEndPoint}");
+
+                int clientId = nextClientId++;
+                clients.TryAdd(clientId, client);
+
+                _ = Task.Run(() => HandleClientAsync(clientId));
+            }
+        }
+
+        private async Task HandleClientAsync(int clientId)
+        {
+            TcpClient client = clients[clientId];
+            NetworkStream stream = client.GetStream();
+            byte[] buffer = new byte[1024];
+
+            while (client.Connected)
+            {
+                int bytesRead = await ReadDataAsync(stream, buffer);
+                    if (bytesRead == 0) break;
+
+                    // Process the data received from the client
+                    string cipherText = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    string data = Cryptography.Decrypt(cipherText, password);
+                    Console.WriteLine($"Received data from client {clientId}: {data}");
+                if (data.StartsWith("VALIDATION"))
+                {
+                    for(int i = 0; i < 3; i++)
+                    {
+                        clientsinfo[clientId,i] = data.Split(';')[i];
+
+                    }
+                    string responseMessage = "VALID";
+                    string encryptedMessage = Cryptography.Encrypt(responseMessage, password);
+                    byte[] responseBytes = Encoding.UTF8.GetBytes(encryptedMessage);
+                    await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
+                    await stream.FlushAsync();
+                    StartSendingMessages(client);
+                }
+                    // Echo the data back to the client
+                else
+                {
+                    CloseClientConnection(clientId);
+                }
+                    await Task.Delay(1000);
+            }
+            if(!client.Connected)
+            Console.WriteLine($"Client {clientId} disconnected from {client.Client.RemoteEndPoint}");
+        }
+
+        private async Task<int> ReadDataAsync(NetworkStream stream, byte[] buffer)
+        {
+            return await stream.ReadAsync(buffer, 0, buffer.Length);
+        }
+
+        private async Task WriteDataAsync(NetworkStream stream, byte[] buffer, int length)
+        {
+            await stream.WriteAsync(buffer, 0, length);
+            await stream.FlushAsync();
+        }
+
+        public void CloseClientConnection(int clientId)
+        {
+            if (clients.TryGetValue(clientId, out TcpClient client))
+            {
+                Console.WriteLine($"Closing connection with client {clientId}");
+                client.Close();
+                clients.TryRemove(clientId, out _);
+            }
+        }
+        public async void StartSendingMessages(TcpClient client)
+        {
+            await Task.Delay(1000);
+            // Запуск таймера, который будет запускать метод отправки сообщения каждые 5 секунд
+            while (await SendMessageToClient("CHECKCON", client))
+            {
+                await Task.Delay(10000);
+            }
+        }
+
+        public async Task<bool> SendMessageToClient(string message, TcpClient client)
+        {
+            // Отправка сообщения на всех клиентов
+            try
+            {
+                NetworkStream stream = client.GetStream();
+                string encryptedMessage = Cryptography.Encrypt(message, password);
+                byte[] responseBytes = Encoding.UTF8.GetBytes(encryptedMessage);
+                await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
+                return true;
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"Client disconnected from {client.Client.RemoteEndPoint}");
+                client.Close();
+                return false;
+            }
+        }
+    }
+
+
+    public class Cryptography
+    {
+        private static readonly byte[] Salt = Encoding.ASCII.GetBytes("SaltySalty");
+
+        public static string Encrypt(string plainText, string password)
+        {
+            byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+            byte[] keyBytes = new Rfc2898DeriveBytes(password, Salt).GetBytes(32);
+            byte[] ivBytes = new Rfc2898DeriveBytes(password, Salt).GetBytes(16);
+
+            using Aes aes = Aes.Create();
+            aes.Key = keyBytes;
+            aes.IV = ivBytes;
+
+            using var encryptor = aes.CreateEncryptor();
+            byte[] encryptedBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
+            return Convert.ToBase64String(encryptedBytes);
+        }
+
+        public static string Decrypt(string cipherText, string password)
+        {
+            byte[] cipherBytes = Convert.FromBase64String(cipherText);
+            byte[] keyBytes = new Rfc2898DeriveBytes(password, Salt).GetBytes(32);
+            byte[] ivBytes = new Rfc2898DeriveBytes(password, Salt).GetBytes(16);
+
+            using Aes aes = Aes.Create();
+            aes.Key = keyBytes;
+            aes.IV = ivBytes;
+
+            using var decryptor = aes.CreateDecryptor();
+            byte[] decryptedBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
+            return Encoding.UTF8.GetString(decryptedBytes);
+        }
+
+        public static string[,] Encrypt(string[,] plainTextArray, string password)
+        {
+            int rowCount = plainTextArray.GetLength(0);
+            int columnCount = plainTextArray.GetLength(1);
+
+            string[,] cipherTextArray = new string[rowCount, columnCount];
+
+            for (int i = 0; i < rowCount; i++)
+            {
+                for (int j = 0; j < columnCount; j++)
+                {
+                    cipherTextArray[i, j] = Encrypt(plainTextArray[i, j], password);
+                }
+            }
+
+            return cipherTextArray;
+        }
+
+        public static string[,] Decrypt(string[,] cipherTextArray, string password)
+        {
+            int rowCount = cipherTextArray.GetLength(0);
+            int columnCount = cipherTextArray.GetLength(1);
+
+            string[,] plainTextArray = new string[rowCount, columnCount];
+
+            for (int i = 0; i < rowCount; i++)
+            {
+                for (int j = 0; j < columnCount; j++)
+                {
+                    plainTextArray[i, j] = Decrypt(cipherTextArray[i, j], password);
+                }
+            }
+
+            return plainTextArray;
+        }
+
+        public static string[,,] Encrypt(string[,,] plainTextArray, string password)
+        {
+            int rowCount = plainTextArray.GetLength(0);
+            int columnCount = plainTextArray.GetLength(1);
+            int depthCount = plainTextArray.GetLength(2);
+
+            string[,,] cipherTextArray = new string[rowCount, columnCount, depthCount];
+
+            for (int i = 0; i < rowCount; i++)
+            {
+                for (int j = 0; j < columnCount; j++)
+                {
+                    for (int k = 0; k < depthCount; k++)
+                    {
+                        cipherTextArray[i, j, k] = Encrypt(plainTextArray[i, j, k], password);
+                    }
+                }
+            }
+            return cipherTextArray;
+        }
+
+        public static string[,,] Decrypt(string[,,] cipherTextArray, string password)
+        {
+            int rowCount = cipherTextArray.GetLength(0);
+            int columnCount = cipherTextArray.GetLength(1);
+            int depthCount = cipherTextArray.GetLength(2);
+
+            string[,,] plainTextArray = new string[rowCount, columnCount, depthCount];
+
+            for (int i = 0; i < rowCount; i++)
+            {
+                for (int j = 0; j < columnCount; j++)
+                {
+                    for (int k = 0; k < depthCount; k++)
+                    {
+                        plainTextArray[i, j, k] = Decrypt(cipherTextArray[i, j, k], password);
+                    }
+                }
+            }
+
+            return plainTextArray;
         }
     }
 }
