@@ -25,67 +25,13 @@ namespace PCInfoParser_Server_NET_Forms
         [STAThread]
         static async Task Main()
         {
-            // Start the server on port 12345
             AsyncTcpServer server = new(12345);
             await server.StartAsync();
             Console.WriteLine("Server started");
-            //while (true)
-            //{
-            //    TcpClient client = await server.AcceptTcpClientAsync();
-            //    clients.Add(client);
-            //    Console.WriteLine("Client connected");
-            //    await HandleClientRequestAsync(client, password);
-            //}
 
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
             //Application.Run(new Form1());
-        }
-        static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
-            // выполняем действия перед закрытием приложения
-            // например, сохраняем данные или закрываем соединения с базой данных
-
-            // e.Cancel = true; // можно отменить закрытие приложения, установив свойство e.Cancel в true
-        }
-        static async Task HandleClientRequestAsync(TcpClient client, string password)
-        {
-            try
-            {
-                // Process the client request
-                NetworkStream stream = client.GetStream();
-
-                byte[] buffer = new byte[1024];
-                int bytesReceived = await stream.ReadAsync(buffer, 0, buffer.Length);
-                string cipherText = Encoding.UTF8.GetString(buffer, 0, bytesReceived);
-                string receivedMessage = Cryptography.Decrypt(cipherText, password);
-                if (receivedMessage.StartsWith("VALIDATION"))
-                {
-                    Console.WriteLine("Received message from client " + client.Client.RemoteEndPoint.ToString() + ": " + receivedMessage);
-                    string responseMessage = "VALID";
-                    string encryptedMessage = Cryptography.Encrypt(responseMessage, password);
-                    byte[] responseBytes = Encoding.UTF8.GetBytes(encryptedMessage);
-                    await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
-                }
-                else if (receivedMessage == "CHECKCON")
-                {
-                    Console.WriteLine("Received message from client " + client.Client.RemoteEndPoint.ToString() + ": " + receivedMessage);
-                }
-                else
-                {
-                    throw new CryptographicException("Неверный пароль");
-                }
-            }
-            catch (CryptographicException)
-            {
-                Console.WriteLine("Неверный пароль");
-                client.Close();
-                clients.Remove(client);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
         }
     }
 
@@ -138,9 +84,9 @@ public class AsyncTcpServer
                     Console.WriteLine($"Received data from client {clientId}: {data}");
                 if (data.StartsWith("VALIDATION"))
                 {
-                    for(int i = 0; i < 3; i++)
+                    for (int i = 0; i < 3; i++)
                     {
-                        clientsinfo[clientId,i] = data.Split(';')[i];
+                        clientsinfo[clientId, i] = data.Split(';')[i];
 
                     }
                     string responseMessage = "VALID";
@@ -148,9 +94,10 @@ public class AsyncTcpServer
                     byte[] responseBytes = Encoding.UTF8.GetBytes(encryptedMessage);
                     await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
                     await stream.FlushAsync();
-                    StartSendingMessages(client);
+                    StartSendingMessages(client, clientId);
                 }
-                    // Echo the data back to the client
+                // Echo the data back to the client
+                else if (data.StartsWith("CHECKCON")) { }
                 else
                 {
                     CloseClientConnection(clientId);
@@ -181,17 +128,17 @@ public class AsyncTcpServer
                 clients.TryRemove(clientId, out _);
             }
         }
-        public async void StartSendingMessages(TcpClient client)
+        public async void StartSendingMessages(TcpClient client, int clientId)
         {
             await Task.Delay(1000);
             // Запуск таймера, который будет запускать метод отправки сообщения каждые 5 секунд
-            while (await SendMessageToClient("CHECKCON", client))
+            while (await SendMessageToClient("CHECKCON", client, clientId))
             {
                 await Task.Delay(10000);
             }
         }
 
-        public async Task<bool> SendMessageToClient(string message, TcpClient client)
+        public async Task<bool> SendMessageToClient(string message, TcpClient client, int clientId)
         {
             // Отправка сообщения на всех клиентов
             try
@@ -206,6 +153,7 @@ public class AsyncTcpServer
             {
                 Console.WriteLine($"Client disconnected from {client.Client.RemoteEndPoint}");
                 client.Close();
+                CloseClientConnection(clientId);
                 return false;
             }
         }
