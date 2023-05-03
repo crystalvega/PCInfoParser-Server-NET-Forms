@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -15,26 +16,25 @@ namespace PCInfoParser_Server_NET_Forms
         /// Главная точка входа для приложения.
         /// </summary>
         [STAThread]
-        static async Task Main()
+        static int Main()
         {
-            AsyncTcpServer server = new(12345);
-            await server.StartAsync();
-            Console.WriteLine("Server started");
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());
+            return 0;
         }
     }
 
-public class AsyncTcpServer
+    public class AsyncTcpServer
     {
         private readonly int port;
         private readonly TcpListener listener;
         static string password = "12qwaszx121QAZ2WSXEPLSSHOW";
         private readonly ConcurrentDictionary<int, TcpClient> clients = new ConcurrentDictionary<int, TcpClient>();
         private int nextClientId = 0;
-        string[,] clientsinfo = new string[400000,3];
+        //public string[,] clientsinfo = new string[400000, 3];
+        Dictionary<int, string[]> clientsinfo = new();
+        string[,] clientsinfocheck = new string[400000, 3];
 
         public AsyncTcpServer(int port)
         {
@@ -42,7 +42,7 @@ public class AsyncTcpServer
             listener = new TcpListener(IPAddress.Any, port);
         }
 
-        public async Task StartAsync()
+        public async void StartAsync()
         {
             listener.Start();
             Console.WriteLine($"Server started listening on port {port}.");
@@ -59,6 +59,18 @@ public class AsyncTcpServer
             }
         }
 
+        //public bool isNewConnected()
+        //{
+        //    if (clientsinfo == clientsinfocheck) return false;
+        //    clientsinfocheck = clientsinfo;
+        //    return true;
+        //}
+
+        public Dictionary<int, string[]> GetClients()
+        {
+            return this.clientsinfo;
+        }
+
         private async Task HandleClientAsync(int clientId)
         {
             TcpClient client = clients[clientId];
@@ -68,19 +80,15 @@ public class AsyncTcpServer
             while (client.Connected)
             {
                 int bytesRead = await ReadDataAsync(stream, buffer);
-                    if (bytesRead == 0) break;
+                if (bytesRead == 0) break;
 
-                    // Process the data received from the client
-                    string cipherText = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    string data = Cryptography.Decrypt(cipherText, password);
-                    Console.WriteLine($"Received data from client {clientId}: {data}");
+                // Process the data received from the client
+                string cipherText = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                string data = Cryptography.Decrypt(cipherText, password);
+                Console.WriteLine($"Received data from client {clientId}: {data}");
                 if (data.StartsWith("VALIDATION"))
                 {
-                    for (int i = 0; i < 3; i++)
-                    {
-                        clientsinfo[clientId, i] = data.Split(';')[i];
-
-                    }
+                    clientsinfo.Add(clientId, data.Split(';'));
                     string responseMessage = "VALID";
                     string encryptedMessage = Cryptography.Encrypt(responseMessage, password);
                     byte[] responseBytes = Encoding.UTF8.GetBytes(encryptedMessage);
@@ -94,10 +102,10 @@ public class AsyncTcpServer
                 {
                     CloseClientConnection(clientId);
                 }
-                    await Task.Delay(1000);
+                await Task.Delay(1000);
             }
-            if(!client.Connected)
-            Console.WriteLine($"Client {clientId} disconnected from {client.Client.RemoteEndPoint}");
+            if (!client.Connected)
+                Console.WriteLine($"Client {clientId} disconnected from {client.Client.RemoteEndPoint}");
         }
 
         private async Task<int> ReadDataAsync(NetworkStream stream, byte[] buffer)

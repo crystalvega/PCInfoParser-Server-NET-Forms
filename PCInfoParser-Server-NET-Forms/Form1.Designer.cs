@@ -28,33 +28,27 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.treeView1 = new System.Windows.Forms.TreeView();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.button2 = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
-            this.label1 = new System.Windows.Forms.Label();
-            this.button3 = new System.Windows.Forms.Button();
-            this.button4 = new System.Windows.Forms.Button();
-            this.button5 = new System.Windows.Forms.Button();
             this.button6 = new System.Windows.Forms.Button();
+            this.button5 = new System.Windows.Forms.Button();
+            this.button4 = new System.Windows.Forms.Button();
+            this.button3 = new System.Windows.Forms.Button();
+            this.label1 = new System.Windows.Forms.Label();
+            this.button1 = new System.Windows.Forms.Button();
+            this.button2 = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.приложениеToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.настройкиToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.mySQLToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.просмотрЭкспортToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.listView1 = new System.Windows.Forms.ListView();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // treeView1
-            // 
-            this.treeView1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.treeView1.CheckBoxes = true;
-            this.treeView1.Location = new System.Drawing.Point(12, 25);
-            this.treeView1.Name = "treeView1";
-            this.treeView1.Size = new System.Drawing.Size(528, 413);
-            this.treeView1.TabIndex = 0;
             // 
             // splitContainer1
             // 
@@ -79,25 +73,41 @@
             this.splitContainer1.SplitterDistance = 237;
             this.splitContainer1.TabIndex = 1;
             // 
-            // button2
+            // button6
             // 
-            this.button2.Location = new System.Drawing.Point(3, 142);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(236, 23);
-            this.button2.TabIndex = 0;
-            this.button2.Text = "Остановить сервер";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button1_Click);
+            this.button6.Location = new System.Drawing.Point(6, 130);
+            this.button6.Name = "button6";
+            this.button6.Size = new System.Drawing.Size(233, 23);
+            this.button6.TabIndex = 3;
+            this.button6.Text = "button6";
+            this.button6.UseVisualStyleBackColor = true;
             // 
-            // button1
+            // button5
             // 
-            this.button1.Location = new System.Drawing.Point(3, 101);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(236, 23);
-            this.button1.TabIndex = 1;
-            this.button1.Text = "Запустить сервер";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button2_Click);
+            this.button5.Location = new System.Drawing.Point(6, 89);
+            this.button5.Name = "button5";
+            this.button5.Size = new System.Drawing.Size(233, 23);
+            this.button5.TabIndex = 2;
+            this.button5.Text = "button5";
+            this.button5.UseVisualStyleBackColor = true;
+            // 
+            // button4
+            // 
+            this.button4.Location = new System.Drawing.Point(6, 51);
+            this.button4.Name = "button4";
+            this.button4.Size = new System.Drawing.Size(233, 23);
+            this.button4.TabIndex = 1;
+            this.button4.Text = "Отключить";
+            this.button4.UseVisualStyleBackColor = true;
+            // 
+            // button3
+            // 
+            this.button3.Location = new System.Drawing.Point(6, 13);
+            this.button3.Name = "button3";
+            this.button3.Size = new System.Drawing.Size(233, 23);
+            this.button3.TabIndex = 0;
+            this.button3.Text = "Получить характеристики";
+            this.button3.UseVisualStyleBackColor = true;
             // 
             // label1
             // 
@@ -109,46 +119,31 @@
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
-            // button3
+            // button1
             // 
-            this.button3.Location = new System.Drawing.Point(6, 13);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(233, 23);
-            this.button3.TabIndex = 0;
-            this.button3.Text = "Получить характеристики";
-            this.button3.UseVisualStyleBackColor = true;
+            this.button1.Location = new System.Drawing.Point(3, 101);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(236, 23);
+            this.button1.TabIndex = 1;
+            this.button1.Text = "Запустить сервер";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
-            // button4
+            // button2
             // 
-            this.button4.Location = new System.Drawing.Point(6, 51);
-            this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(233, 23);
-            this.button4.TabIndex = 1;
-            this.button4.Text = "Отключить";
-            this.button4.UseVisualStyleBackColor = true;
-            // 
-            // button5
-            // 
-            this.button5.Location = new System.Drawing.Point(6, 89);
-            this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(233, 23);
-            this.button5.TabIndex = 2;
-            this.button5.Text = "button5";
-            this.button5.UseVisualStyleBackColor = true;
-            // 
-            // button6
-            // 
-            this.button6.Location = new System.Drawing.Point(6, 130);
-            this.button6.Name = "button6";
-            this.button6.Size = new System.Drawing.Size(233, 23);
-            this.button6.TabIndex = 3;
-            this.button6.Text = "button6";
-            this.button6.UseVisualStyleBackColor = true;
+            this.button2.Location = new System.Drawing.Point(3, 142);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(236, 23);
+            this.button2.TabIndex = 0;
+            this.button2.Text = "Остановить сервер";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.приложениеToolStripMenuItem});
+            this.приложениеToolStripMenuItem,
+            this.mySQLToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(800, 24);
@@ -166,18 +161,45 @@
             // настройкиToolStripMenuItem
             // 
             this.настройкиToolStripMenuItem.Name = "настройкиToolStripMenuItem";
-            this.настройкиToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.настройкиToolStripMenuItem.Size = new System.Drawing.Size(134, 22);
             this.настройкиToolStripMenuItem.Text = "Настройки";
+            // 
+            // mySQLToolStripMenuItem
+            // 
+            this.mySQLToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.просмотрЭкспортToolStripMenuItem});
+            this.mySQLToolStripMenuItem.Name = "mySQLToolStripMenuItem";
+            this.mySQLToolStripMenuItem.Size = new System.Drawing.Size(87, 20);
+            this.mySQLToolStripMenuItem.Text = "База данных";
+            // 
+            // просмотрЭкспортToolStripMenuItem
+            // 
+            this.просмотрЭкспортToolStripMenuItem.Name = "просмотрЭкспортToolStripMenuItem";
+            this.просмотрЭкспортToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.просмотрЭкспортToolStripMenuItem.Text = "Просмотр/Экспорт";
+            // 
+            // listView1
+            // 
+            this.listView1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.listView1.CheckBoxes = true;
+            this.listView1.HideSelection = false;
+            this.listView1.Location = new System.Drawing.Point(12, 27);
+            this.listView1.Name = "listView1";
+            this.listView1.Size = new System.Drawing.Size(528, 411);
+            this.listView1.TabIndex = 3;
+            this.listView1.UseCompatibleStateImageBehavior = false;
+            this.listView1.View = System.Windows.Forms.View.Details;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.listView1);
             this.Controls.Add(this.splitContainer1);
-            this.Controls.Add(this.treeView1);
             this.Controls.Add(this.menuStrip1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.MaximizeBox = false;
             this.Name = "Form1";
@@ -194,8 +216,6 @@
         }
 
         #endregion
-
-        private System.Windows.Forms.TreeView treeView1;
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button button1;
@@ -207,6 +227,9 @@
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem приложениеToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem настройкиToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem mySQLToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem просмотрЭкспортToolStripMenuItem;
+        private System.Windows.Forms.ListView listView1;
     }
 }
 
