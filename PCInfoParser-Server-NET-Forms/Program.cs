@@ -1,24 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Security;
-using System.Security.Cryptography;
-using System.IO;
-using System.Collections.Concurrent;
-using System.Timers;
 
 namespace PCInfoParser_Server_NET_Forms
 {
     internal static class Program
     {
-        static List<TcpClient> clients = new List<TcpClient>();
-        static string password = "12qwaszx121QAZ2WSXEPLSSHOW";
         /// <summary>
         /// Главная точка входа для приложения.
         /// </summary>
@@ -29,9 +21,9 @@ namespace PCInfoParser_Server_NET_Forms
             await server.StartAsync();
             Console.WriteLine("Server started");
 
-            //Application.EnableVisualStyles();
-            //Application.SetCompatibleTextRenderingDefault(false);
-            //Application.Run(new Form1());
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Form1());
         }
     }
 
