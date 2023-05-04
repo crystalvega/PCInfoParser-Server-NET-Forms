@@ -20,7 +20,7 @@ namespace PCInfoParser_Server_NET_Forms
             UpdateStatus();
             listView1.FullRowSelect = true;
             listView1.HeaderStyle = ColumnHeaderStyle.Nonclickable;
-            ColumnHeader header = new ColumnHeader();
+            ColumnHeader header = new();
             header.Text = "";
             header.TextAlign = HorizontalAlignment.Left;
             header.Width = 30;

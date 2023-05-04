@@ -72,13 +72,13 @@ namespace PCInfoParser_Server_NET_Forms
             this.splitContainer1.Panel2.Controls.Add(this.label1);
             this.splitContainer1.Panel2.Controls.Add(this.button1);
             this.splitContainer1.Panel2.Controls.Add(this.button2);
-            this.splitContainer1.Size = new System.Drawing.Size(242, 413);
-            this.splitContainer1.SplitterDistance = 237;
+            this.splitContainer1.Size = new System.Drawing.Size(242, 387);
+            this.splitContainer1.SplitterDistance = 194;
             this.splitContainer1.TabIndex = 1;
             // 
             // button6
             // 
-            this.button6.Location = new System.Drawing.Point(-1, 196);
+            this.button6.Location = new System.Drawing.Point(-1, 166);
             this.button6.Name = "button6";
             this.button6.Size = new System.Drawing.Size(242, 23);
             this.button6.TabIndex = 3;
@@ -87,7 +87,7 @@ namespace PCInfoParser_Server_NET_Forms
             // 
             // button5
             // 
-            this.button5.Location = new System.Drawing.Point(-1, 140);
+            this.button5.Location = new System.Drawing.Point(-1, 123);
             this.button5.Name = "button5";
             this.button5.Size = new System.Drawing.Size(242, 23);
             this.button5.TabIndex = 2;
@@ -96,7 +96,7 @@ namespace PCInfoParser_Server_NET_Forms
             // 
             // button4
             // 
-            this.button4.Location = new System.Drawing.Point(-1, 87);
+            this.button4.Location = new System.Drawing.Point(-1, 71);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(242, 23);
             this.button4.TabIndex = 1;
@@ -105,7 +105,7 @@ namespace PCInfoParser_Server_NET_Forms
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(-1, 28);
+            this.button3.Location = new System.Drawing.Point(-1, 18);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(242, 23);
             this.button3.TabIndex = 0;
@@ -134,7 +134,7 @@ namespace PCInfoParser_Server_NET_Forms
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(-1, 142);
+            this.button2.Location = new System.Drawing.Point(-1, 133);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(242, 23);
             this.button2.TabIndex = 0;
@@ -199,7 +199,7 @@ namespace PCInfoParser_Server_NET_Forms
             // 
             this.checkBox1.Location = new System.Drawing.Point(12, 418);
             this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(528, 24);
+            this.checkBox1.Size = new System.Drawing.Size(774, 24);
             this.checkBox1.TabIndex = 4;
             this.checkBox1.Text = "Выделить все";
             this.checkBox1.UseVisualStyleBackColor = true;
