@@ -27,12 +27,13 @@ namespace PCInfoParser_Server_NET_Forms
 
     public class AsyncTcpServer
     {
+        TcpClient client = new();
+        bool start = false;
         private readonly int port;
         private readonly TcpListener listener;
         static string password = "12qwaszx121QAZ2WSXEPLSSHOW";
         private readonly ConcurrentDictionary<int, TcpClient> clients = new ConcurrentDictionary<int, TcpClient>();
         private int nextClientId = 0;
-        //public string[,] clientsinfo = new string[400000, 3];
         Dictionary<int, string[]> clientsinfo = new();
         string[,] clientsinfocheck = new string[400000, 3];
 
@@ -44,27 +45,24 @@ namespace PCInfoParser_Server_NET_Forms
 
         public async void StartAsync()
         {
+            start = true;
             listener.Start();
             Console.WriteLine($"Server started listening on port {port}.");
-
-            while (true)
+            while (start)
             {
-                TcpClient client = await listener.AcceptTcpClientAsync();
-                Console.WriteLine($"Client connected from {client.Client.RemoteEndPoint}");
+                try { 
+                    client = await listener.AcceptTcpClientAsync();
+                    Console.WriteLine($"Client connected from {client.Client.RemoteEndPoint}");
 
-                int clientId = nextClientId++;
-                clients.TryAdd(clientId, client);
+                    int clientId = nextClientId++;
+                    clients.TryAdd(clientId, client);
 
-                _ = Task.Run(() => HandleClientAsync(clientId));
+                    _ = Task.Run(() => HandleClientAsync(clientId));
+                }
+                catch{ Console.WriteLine(); }
             }
-        }
 
-        //public bool isNewConnected()
-        //{
-        //    if (clientsinfo == clientsinfocheck) return false;
-        //    clientsinfocheck = clientsinfo;
-        //    return true;
-        //}
+        }
 
         public Dictionary<int, string[]> GetClients()
         {
@@ -126,15 +124,23 @@ namespace PCInfoParser_Server_NET_Forms
                 Console.WriteLine($"Closing connection with client {clientId}");
                 client.Close();
                 clients.TryRemove(clientId, out _);
+                clientsinfo.Remove(clientId);
             }
         }
         public async void StartSendingMessages(TcpClient client, int clientId)
         {
             await Task.Delay(1000);
             // Запуск таймера, который будет запускать метод отправки сообщения каждые 5 секунд
-            while (await SendMessageToClient("CHECKCON", client, clientId))
+            while (true)
             {
-                await Task.Delay(10000);
+                try
+                {
+                    await SendMessageToClient("CHECKCON", client, clientId);
+                    await Task.Delay(10000);
+                }
+                catch (Exception) {
+                    break;
+                }
             }
         }
 
@@ -156,6 +162,19 @@ namespace PCInfoParser_Server_NET_Forms
                 CloseClientConnection(clientId);
                 return false;
             }
+        }
+        public void StopServer()
+        {
+            Console.WriteLine("Stopping server...");
+            start = false;
+            listener.Stop();
+            Task.Delay(2000);
+            foreach (int clientId in clients.Keys)
+            {
+                CloseClientConnection(clientId);
+            }
+            
+
         }
     }
 
