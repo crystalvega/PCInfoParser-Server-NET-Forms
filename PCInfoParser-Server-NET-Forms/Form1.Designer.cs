@@ -111,6 +111,7 @@ namespace PCInfoParser_Server_NET_Forms
             this.button3.TabIndex = 0;
             this.button3.Text = "Получить характеристики";
             this.button3.UseVisualStyleBackColor = true;
+            this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
             // label1
             // 
@@ -220,6 +221,7 @@ namespace PCInfoParser_Server_NET_Forms
             this.MaximizeBox = false;
             this.Name = "Form1";
             this.Text = "PCInfoParser-Server";
+            this.Load += new System.EventHandler(this.Form1_Load);
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();

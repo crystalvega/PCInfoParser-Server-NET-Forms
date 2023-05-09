@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -112,6 +113,25 @@ namespace PCInfoParser_Server_NET_Forms
             UpdateStatus();
         }
 
+        private void Form1_Load(object sender, System.EventArgs e)
+        {
+            listView1.Columns[0].Width = 30;
+            listView1.Columns[1].Width = 60;
+            listView1.Columns[2].Width = 200;
+            listView1.Columns[3].Width = 60;
+            SizeLastColumn(listView1);
+        }
+
+        private void listView1_Resize(object sender, System.EventArgs e)
+        {
+            SizeLastColumn((ListView)sender);
+        }
+
+        private void SizeLastColumn(ListView lv)
+        {
+            lv.Columns[lv.Columns.Count - 1].Width = -2;
+        }
+
         private void label1_Click(object sender, EventArgs e)
         {
 
@@ -149,6 +169,24 @@ namespace PCInfoParser_Server_NET_Forms
             else
             {
                 selectedItemIndex = -1;
+            }
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            List<string[]> selectedClients = new();
+            // Переберите все элементы в ListView и найдите выбранные элементы
+            foreach (ListViewItem listViewItem in listView1.Items)
+            {
+                string[] infoClients = new string[4];
+
+                if (listViewItem.Checked)
+                {
+                    for(int i=1; i<5; i++) infoClients[i-1] = listViewItem.SubItems[i].Text;
+
+                    // Теперь вы можете использовать выбранные значения
+                    selectedClients.Add(infoClients);
+                }
             }
         }
     }
