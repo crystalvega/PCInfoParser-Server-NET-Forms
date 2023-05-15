@@ -31,7 +31,7 @@ namespace PCInfoParser_Server_NET_Forms
         bool start = false;
         private readonly int port;
         private readonly TcpListener listener;
-        static string password = "12qwaszx121QAZ2WSXEPLSSHOW";
+        static string password = "12345678";
         private readonly ConcurrentDictionary<int, TcpClient> clients = new ConcurrentDictionary<int, TcpClient>();
         private int nextClientId = 0;
         Dictionary<int, string[]> clientsinfo = new();
@@ -87,18 +87,19 @@ namespace PCInfoParser_Server_NET_Forms
                 if (data.StartsWith("VALIDATION"))
                 {
                     clientsinfo.Add(clientId, data.Split(';'));
-                    string responseMessage = "VALID";
+                    string responseMessage = "VALID;0";
                     string encryptedMessage = Cryptography.Encrypt(responseMessage, password);
                     byte[] responseBytes = Encoding.UTF8.GetBytes(encryptedMessage);
                     await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
                     await stream.FlushAsync();
-                    StartSendingMessages(client, clientId);
+                    //StartSendingMessages(client, clientId);
                 }
                 // Echo the data back to the client
                 else if (data.StartsWith("CHECKCON")) { }
                 else
                 {
-                    CloseClientConnection(clientId);
+                    Console.WriteLine(data);
+                    //CloseClientConnection(clientId);
                 }
                 await Task.Delay(1000);
             }
