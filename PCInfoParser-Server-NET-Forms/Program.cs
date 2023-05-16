@@ -135,6 +135,12 @@ namespace PCInfoParser_Server_NET_Forms
 
     public class AsyncTcpServer
     {
+        string mysql_server = "localhost";
+        string mysql_database = "your_database";
+        string mysql_username = "your_username";
+        string mysql_password = "your_password";
+
+        MySQLConnector connector;
         TcpClient client = new();
         bool start = false;
         private readonly int port;
@@ -147,6 +153,12 @@ namespace PCInfoParser_Server_NET_Forms
         {
             this.port = port;
             listener = new TcpListener(IPAddress.Any, port);
+        }
+
+        public async void ConnectMySQL(string server, string database, string username, string password)
+        {
+            connector = new MySQLConnector(server, database, username, password);
+            await Task.Delay(50);
         }
 
         public async void StartAsync()
@@ -174,9 +186,10 @@ namespace PCInfoParser_Server_NET_Forms
         {
             TcpClient client = clients[clientId];
             NetworkStream stream = client.GetStream();
-            string[] user;
-            string[,] general;
-            string[,,] disk;
+            string[] user = new string[0];
+            string[,] general = new string[0,0];
+            string[,,] smart = new string[0,0,0];
+            string lan = "";
             while (client.Connected)
             {
                 string data = await ReadDataAsync(stream);
@@ -185,9 +198,10 @@ namespace PCInfoParser_Server_NET_Forms
                 if (data.StartsWith("VALIDATION"))
                 {
                     user = data.Split(';');
-                    if (user[4] == "NeedToGet") user[4] = GetID();
+                    //if (user[4] == "NeedToGet") user[4] = GetID();
                     await WriteDataAsync(stream, $"VALID;{user[4]}", 10);
                 }
+                else if (data.StartsWith("Lan: ")) lan = data.Replace("Lan: ", "");
                 else if(data.StartsWith("General: "))
                 {
                     data = data.Replace("General: ", "");
@@ -196,11 +210,16 @@ namespace PCInfoParser_Server_NET_Forms
                 else if (data.StartsWith("Disk: "))
                 {
                     data = data.Replace("Disk: ", "");
-                    disk = ArrayStringConverter.FromString3D(data);
+                    smart = ArrayStringConverter.FromString3D(data);
                 }
-                else if(data == "END")
+                else if (data == "ENDSEND")
                 {
-
+                    string[] commands = MySQLCommand.LoadExecuteParametras(general, smart, user, lan);
+                    client.Close();
+                }
+                else
+                {
+                    client.Close();
                 }
             }
             if (!client.Connected)
