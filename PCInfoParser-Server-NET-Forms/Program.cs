@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +13,111 @@ using System.Windows.Forms;
 
 namespace PCInfoParser_Server_NET_Forms
 {
+
+    class ArrayStringConverter
+    {
+        private const string ArraySeparator = "@@";
+        private const string ElementSeparator = "##";
+
+        public static string ToString2D(string[,] arr)
+        {
+            int rows = arr.GetLength(0);
+            int cols = arr.GetLength(1);
+            List<string> arrStrings = new List<string>(rows);
+            for (int i = 0; i < rows; i++)
+            {
+                List<string> rowStrings = new List<string>(cols);
+                for (int j = 0; j < cols; j++)
+                {
+                    string value = arr[i, j];
+                    rowStrings.Add(EncodeValue(value));
+                }
+                arrStrings.Add(string.Join(ElementSeparator, rowStrings));
+            }
+            return string.Join(ArraySeparator, arrStrings);
+        }
+
+        public static string[,] FromString2D(string s)
+        {
+            string[] arrStrings = s.Split(new[] { ArraySeparator }, StringSplitOptions.RemoveEmptyEntries);
+            int rows = arrStrings.Length;
+            int cols = arrStrings[0].Split(new[] { ElementSeparator }, StringSplitOptions.None).Length;
+            string[,] arr = new string[rows, cols];
+            for (int i = 0; i < rows; i++)
+            {
+                string[] rowStrings = arrStrings[i].Split(new[] { ElementSeparator }, StringSplitOptions.None);
+                for (int j = 0; j < cols; j++)
+                {
+                    arr[i, j] = DecodeValue(rowStrings[j]);
+                }
+            }
+            return arr;
+        }
+
+        public static string ToString3D(string[,,] arr)
+        {
+            int depth = arr.GetLength(0);
+            int rows = arr.GetLength(1);
+            int cols = arr.GetLength(2);
+            List<string> matrixStrings = new List<string>(depth);
+            for (int k = 0; k < depth; k++)
+            {
+                List<string> arrStrings = new List<string>(rows);
+                for (int i = 0; i < rows; i++)
+                {
+                    List<string> rowStrings = new List<string>(cols);
+                    for (int j = 0; j < cols; j++)
+                    {
+                        string value = arr[k, i, j];
+                        rowStrings.Add(EncodeValue(value));
+                    }
+                    arrStrings.Add(string.Join(ElementSeparator, rowStrings));
+                }
+                matrixStrings.Add(string.Join(ArraySeparator, arrStrings));
+            }
+            return string.Join(Environment.NewLine + Environment.NewLine, matrixStrings);
+        }
+
+        public static string[,,] FromString3D(string s)
+        {
+            string[] matrixStrings = s.Split(new[] { Environment.NewLine + Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            int depth = matrixStrings.Length;
+            int rows = matrixStrings[0].Split(new[] { ArraySeparator }, StringSplitOptions.RemoveEmptyEntries).Length;
+            int cols = matrixStrings[0].Split(new[] { ArraySeparator }, StringSplitOptions.RemoveEmptyEntries)[0].Split(new[] { ElementSeparator }, StringSplitOptions.None).Length;
+            string[,,] arr = new string[depth, rows, cols];
+            for (int k = 0; k < depth; k++)
+            {
+                string[] arrStrings = matrixStrings[k].Split(new[] { ArraySeparator }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < rows; i++)
+                {
+                    string[] rowStrings = arrStrings[i].Split(new[] { ElementSeparator }, StringSplitOptions.None);
+                    for (int j = 0; j < cols; j++)
+                    {
+                        arr[k, i, j] = DecodeValue(rowStrings[j]);
+                    }
+                }
+            }
+            return arr;
+        }
+
+        private static string EncodeValue(string value)
+        {
+            // Заменяем специальные символы на их эскейп-последовательности
+            value = value.Replace("@", "@@");
+            value = value.Replace("#", "##");
+            return value;
+        }
+
+        private static string DecodeValue(string value)
+        {
+            // Восстанавливаем специальные символы из эскейп-последовательностей
+            value = value.Replace("##", "#");
+            value = value.Replace("@@", "@");
+            return value;
+        }
+    }
+
+
     internal static class Program
     {
         /// <summary>
@@ -34,8 +142,6 @@ namespace PCInfoParser_Server_NET_Forms
         static string password = "12345678";
         private readonly ConcurrentDictionary<int, TcpClient> clients = new ConcurrentDictionary<int, TcpClient>();
         private int nextClientId = 0;
-        Dictionary<int, string[]> clientsinfo = new();
-        string[,] clientsinfocheck = new string[400000, 3];
 
         public AsyncTcpServer(int port)
         {
@@ -64,59 +170,95 @@ namespace PCInfoParser_Server_NET_Forms
 
         }
 
-        public Dictionary<int, string[]> GetClients()
-        {
-            return this.clientsinfo;
-        }
-
         private async Task HandleClientAsync(int clientId)
         {
             TcpClient client = clients[clientId];
             NetworkStream stream = client.GetStream();
-            byte[] buffer = new byte[1024];
-
+            string[] user;
+            string[,] general;
+            string[,,] disk;
             while (client.Connected)
             {
-                int bytesRead = await ReadDataAsync(stream, buffer);
-                if (bytesRead == 0) break;
+                string data = await ReadDataAsync(stream);
 
-                // Process the data received from the client
-                string cipherText = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                string data = Cryptography.Decrypt(cipherText, password);
-                Console.WriteLine($"Received data from client {clientId}: {data}");
+                //Console.WriteLine($"Received data from client {clientId}: {data}");
                 if (data.StartsWith("VALIDATION"))
                 {
-                    clientsinfo.Add(clientId, data.Split(';'));
-                    string responseMessage = "VALID;0";
-                    string encryptedMessage = Cryptography.Encrypt(responseMessage, password);
-                    byte[] responseBytes = Encoding.UTF8.GetBytes(encryptedMessage);
-                    await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
-                    await stream.FlushAsync();
-                    //StartSendingMessages(client, clientId);
+                    user = data.Split(';');
+                    if (user[4] == "NeedToGet") user[4] = GetID();
+                    await WriteDataAsync(stream, $"VALID;{user[4]}", 10);
                 }
-                // Echo the data back to the client
-                else if (data.StartsWith("CHECKCON")) { }
-                else
+                else if(data.StartsWith("General: "))
                 {
-                    Console.WriteLine(data);
-                    //CloseClientConnection(clientId);
+                    data = data.Replace("General: ", "");
+                    general = ArrayStringConverter.FromString2D(data);
                 }
-                await Task.Delay(1000);
+                else if (data.StartsWith("Disk: "))
+                {
+                    data = data.Replace("Disk: ", "");
+                    disk = ArrayStringConverter.FromString3D(data);
+                }
+                else if(data == "END")
+                {
+
+                }
             }
             if (!client.Connected)
                 Console.WriteLine($"Client {clientId} disconnected from {client.Client.RemoteEndPoint}");
         }
 
-        private async Task<int> ReadDataAsync(NetworkStream stream, byte[] buffer)
+        private async Task WriteDataAsync(Stream stream, string message, int bytes)
         {
-            return await stream.ReadAsync(buffer, 0, buffer.Length);
+            string encryptedMessage = Cryptography.Encrypt(message, password);
+            foreach (string chunk in Chunks(encryptedMessage, bytes))
+            {
+                byte[] data = Encoding.UTF8.GetBytes(chunk);
+                await stream.WriteAsync(data, 0, data.Length);
+                byte[] buffer = new byte[4096];
+                await stream.ReadAsync(buffer, 0, buffer.Length);
+            }
+
+            byte[] endSignal = Encoding.UTF8.GetBytes("end");
+            await stream.WriteAsync(endSignal, 0, endSignal.Length);
+            byte[] endBuffer = new byte[4096];
+            await stream.ReadAsync(endBuffer, 0, endBuffer.Length);
         }
 
-        private async Task WriteDataAsync(NetworkStream stream, byte[] buffer, int length)
+        private async Task<string> ReadDataAsync(Stream stream)
         {
-            await stream.WriteAsync(buffer, 0, length);
-            await stream.FlushAsync();
+            byte[] message = new byte[0];
+            byte[] buffer = new byte[4096];
+            int bytesTotal = 0;
+            while (true)
+            {
+                int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                byte[] messageRaw = new byte[bytesRead];
+                Array.Copy(buffer, messageRaw, bytesRead);
+
+                if (Encoding.UTF8.GetString(messageRaw) != "end")
+                {
+                    message = message.Concat(messageRaw).ToArray();
+                    await stream.WriteAsync(Encoding.UTF8.GetBytes("1"), 0, 1);
+                    bytesTotal += bytesRead;
+                }
+                else
+                {
+                    await stream.WriteAsync(Encoding.UTF8.GetBytes("1"), 0, 1);
+                    string dataReceived = Encoding.UTF8.GetString(message, 0, bytesTotal);
+                    return Cryptography.Decrypt(dataReceived, password);
+                }
+            }
         }
+
+        private static IEnumerable<string> Chunks(string lst, int n)
+        {
+            for (int i = 0; i < lst.Length; i += n)
+            {
+                yield return lst.Substring(i, Math.Min(n, lst.Length - i));
+            }
+        }
+
+
 
         public void CloseClientConnection(int clientId)
         {
@@ -125,46 +267,9 @@ namespace PCInfoParser_Server_NET_Forms
                 Console.WriteLine($"Closing connection with client {clientId}");
                 client.Close();
                 clients.TryRemove(clientId, out _);
-                clientsinfo.Remove(clientId);
-            }
-        }
-        public async void StartSendingMessages(TcpClient client, int clientId)
-        {
-            await Task.Delay(1000);
-            // Запуск таймера, который будет запускать метод отправки сообщения каждые 5 секунд
-            while (true)
-            {
-                try
-                {
-                    await SendMessageToClient("CHECKCON", client, clientId);
-                    await Task.Delay(10000);
-                }
-                catch (Exception) {
-                    CloseClientConnection(clientId);
-                    break;
-                }
             }
         }
 
-        public async Task<bool> SendMessageToClient(string message, TcpClient client, int clientId)
-        {
-            // Отправка сообщения на всех клиентов
-            try
-            {
-                NetworkStream stream = client.GetStream();
-                string encryptedMessage = Cryptography.Encrypt(message, password);
-                byte[] responseBytes = Encoding.UTF8.GetBytes(encryptedMessage);
-                await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
-                return true;
-            }
-            catch (Exception)
-            {
-                Console.WriteLine($"Client disconnected from {client.Client.RemoteEndPoint}");
-                client.Close();
-                CloseClientConnection(clientId);
-                return false;
-            }
-        }
         public void StopServer()
         {
             Console.WriteLine("Stopping server...");
