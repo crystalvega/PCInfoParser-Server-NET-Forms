@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +12,109 @@ using System.Windows.Forms;
 
 namespace PCInfoParser_Server_NET_Forms
 {
+
+    public class IniFile
+    {
+        private readonly Dictionary<string, Dictionary<string, string>> data = new Dictionary<string, Dictionary<string, string>>();
+        private readonly string fileName;
+
+        public IniFile(string fileName)
+        {
+            this.fileName = fileName;
+
+            if (File.Exists(fileName))
+            {
+                Load();
+            }
+            else
+            {
+                SetValue("MySQL", "IP", "127.0.0.1");
+                SetValue("MySQL", "Port", "3306");
+                SetValue("MySQL", "Database", "");
+                SetValue("MySQL", "User", "");
+                SetValue("MySQL", "Password", "");
+                SetValue("Server", "Port", "");
+                SetValue("Server", "Password", "");
+                SetValue("App", "Minimaze", "false");
+                SetValue("App", "ConnectMySQL", "false");
+                SetValue("App", "ServerStart", "false");
+                Save();
+            }
+        }
+
+        public string GetValue(string section, string key)
+        {
+            if (data.TryGetValue(section, out Dictionary<string, string> sectionData))
+            {
+                if (sectionData.TryGetValue(key, out string value))
+                {
+                    return value;
+                }
+            }
+
+            return null;
+        }
+
+        public void SetValue(string section, string key, string value)
+        {
+            if (!data.TryGetValue(section, out Dictionary<string, string> sectionData))
+            {
+                sectionData = new Dictionary<string, string>();
+                data[section] = sectionData;
+            }
+
+            sectionData[key] = value;
+        }
+
+        public void Load()
+        {
+            data.Clear();
+
+            string currentSection = null;
+
+            foreach (string line in File.ReadAllLines(fileName))
+            {
+                string trimmedLine = line.Trim();
+                if (trimmedLine.StartsWith("[") && trimmedLine.EndsWith("]"))
+                {
+                    currentSection = trimmedLine.Substring(1, trimmedLine.Length - 2);
+                    if (!data.ContainsKey(currentSection))
+                    {
+                        data[currentSection] = new Dictionary<string, string>();
+                    }
+                }
+                else if (!string.IsNullOrEmpty(trimmedLine))
+                {
+                    string[] parts = trimmedLine.Split(new char[] { '=' }, 2);
+                    if (parts.Length > 1)
+                    {
+                        string currentKey = parts[0].Trim();
+                        string currentValue = parts[1].Trim();
+                        if (data.TryGetValue(currentSection, out Dictionary<string, string> sectionData))
+                        {
+                            sectionData[currentKey] = currentValue;
+                        }
+                    }
+                }
+            }
+        }
+
+        public void Save()
+        {
+            List<string> lines = new List<string>();
+            foreach (KeyValuePair<string, Dictionary<string, string>> section in data)
+            {
+                lines.Add("[" + section.Key + "]");
+                foreach (KeyValuePair<string, string> keyValuePair in section.Value)
+                {
+                    lines.Add(keyValuePair.Key + "=" + keyValuePair.Value);
+                }
+                lines.Add("");
+            }
+
+            File.WriteAllLines(fileName, lines.ToArray());
+        }
+    }
 
     class ArrayStringConverter
     {
@@ -135,34 +237,22 @@ namespace PCInfoParser_Server_NET_Forms
 
     public class AsyncTcpServer
     {
-        string mysql_server = "localhost";
-        string mysql_database = "your_database";
-        string mysql_username = "your_username";
-        string mysql_password = "your_password";
 
-        MySQLConnector connector;
+        public MySQLConnector connector;
+        public IniFile ini;
         TcpClient client = new();
-        bool start = false;
-        private readonly int port;
-        private readonly TcpListener listener;
-        static string password = "12345678";
+        public bool start = false;
+        private int port;
+        private TcpListener listener;
+        public string password = "";
         private readonly ConcurrentDictionary<int, TcpClient> clients = new ConcurrentDictionary<int, TcpClient>();
         private int nextClientId = 0;
 
-        public AsyncTcpServer(int port)
-        {
-            this.port = port;
-            listener = new TcpListener(IPAddress.Any, port);
-        }
-
-        public async void ConnectMySQL(string server, string database, string username, string password)
-        {
-            connector = new MySQLConnector(server, database, username, password);
-            await Task.Delay(50);
-        }
-
         public async void StartAsync()
         {
+            this.port = Convert.ToInt32(ini.GetValue("Server", "Port"));
+            this.password = ini.GetValue("Server", "Password");
+            listener = new TcpListener(IPAddress.Any, port);
             start = true;
             listener.Start();
             Console.WriteLine($"Server started listening on port {port}.");

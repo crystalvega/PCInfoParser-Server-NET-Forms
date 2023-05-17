@@ -12,36 +12,46 @@ namespace PCInfoParser_Server_NET_Forms
     public class MySQLConnector
     {
         private string connectionString;
+        bool connection_status;
+        MySqlConnection connection;
+        public IniFile ini;
 
-        public MySQLConnector(string server, string database, string username, string password)
+        public bool Connect()
         {
-            // Формируем строку подключения
-            connectionString = $"Server={server};Database={database};Uid={username};Pwd={password};";
+            connectionString = $"Server={ini.GetValue("MySQL", "IP")};Port={ini.GetValue("MySQL", "Port")};Database={ini.GetValue("MySQL", "Database")};Uid={ini.GetValue("MySQL", "User")};Pwd={ini.GetValue("MySQL", "Password")};";
+            connection_status = false;
+            try
+            {
+                connection = new(connectionString);
+                connection.Open();
+                connection_status = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return connection_status;
         }
-
+        public void Disconnect()
+        {
+            if(!connection_status) connection.Close();
+        }
         public bool ExecuteCommand(string commandText)
         {
             bool success = false;
-
-            using (MySqlConnection connection = new MySqlConnection(connectionString))
+            try
             {
-                try
-                {
-                    connection.Open();
+                MySqlCommand command = new(commandText, connection);
+                int rowsAffected = command.ExecuteNonQuery();
 
-                    MySqlCommand command = new MySqlCommand(commandText, connection);
-                    int rowsAffected = command.ExecuteNonQuery();
-
-                    // Если хотя бы одна строка была затронута, считаем операцию успешной
-                    success = rowsAffected > 0;
-                }
-                catch (MySqlException ex)
-                {
-                    // Обработка ошибок подключения к базе данных
-                    Console.WriteLine($"An error occurred: {ex.Message}");
-                }
+                // Если хотя бы одна строка была затронута, считаем операцию успешной
+                success = rowsAffected > 0;
             }
-
+            catch (MySqlException ex)
+            {
+                // Обработка ошибок подключения к базе данных
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
             return success;
         }
     }
@@ -108,9 +118,6 @@ namespace PCInfoParser_Server_NET_Forms
             `Дата создания` DATETIME  NOT NULL
         );
         ";
-
-            //createAllConfTable = createAllConfTable.Replace("{filename}", filename);
-            //createDiskConfTable = createDiskConfTable.Replace("{filename}", filename);
 
             return returnvalue;
         }
