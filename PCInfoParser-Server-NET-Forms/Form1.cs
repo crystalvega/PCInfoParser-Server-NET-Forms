@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Button;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace PCInfoParser_Server_NET_Forms
 {
@@ -106,28 +102,78 @@ namespace PCInfoParser_Server_NET_Forms
             }
         }
 
-        private async void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object sender, EventArgs e)
         {
-            server_status = "Включение...";
+            Console.WriteLine("[Server] Запуск сервера...");
+            server_status = "Запуск...";
             server.StartAsync();
-            server_status = "Включен";
-            await Task.Delay(500);
+            server_status = "Запущен";
+            Console.WriteLine($"[Server] Сервер запущен на порте {ini.GetValue("Server", "Port")}!");
+            button1.Enabled = false;
+            button2.Enabled = true;
+            button3.Enabled = false;
+            button4.Enabled = false;
+            userSettings.Change(2);
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
+            Console.WriteLine("[Server] Выключение сервера...");
+            server_status = "Выключение...";
             server.StopServer();
             server_status = "Выключен";
+            Console.WriteLine("[Server] Сервер выключен!");
+            button1.Enabled = true;
+            button2.Enabled = false;
+            button3.Enabled = false;
+            button4.Enabled = true;
+            Change(0);
+            userSettings.Change(1);
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-
+            Console.WriteLine("[MySQL] Подключение к MySQL...");
+            mysql_status = "Подключение...";
+            button3.Enabled = false;
+            button4.Enabled = false;
+            if (connector.Connect())
+            {
+                button1.Enabled = true;
+                button2.Enabled = false;
+                button3.Enabled = false;
+                button4.Enabled = true;
+                Console.WriteLine("[MySQL] Подключено к MySQL успешно!");
+                mysql_status = "Подключено";
+                userSettings.Change(1);
+                if (ini.GetValue("Server", "Port") != "" && ini.GetValue("Server", "Password") != "") Change(3);
+                else Change(1);
+            }
+            else
+            {
+                button1.Enabled = false;
+                button2.Enabled = false;
+                button3.Enabled = true;
+                button4.Enabled = false;
+                Console.WriteLine("[MySQL] Не удалось подключиться к MySQL!");
+                mysql_status = "Отключено";
+                Change(2);
+                userSettings.Change(0);
+            }
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
-
+            Console.WriteLine("[MySQL] Отключение от MySQL...");
+            mysql_status = "Отключение";
+            connector.Disconnect();
+            button1.Enabled = false;
+            button2.Enabled = false;
+            button3.Enabled = true;
+            button4.Enabled = false;
+            Console.WriteLine("[MySQL] Отключено от MySQL успешно!");
+            mysql_status = "Отключено";
+            userSettings.Change(0);
         }
 
         private void настройкиToolStripMenuItem_Click(object sender, EventArgs e)
@@ -172,6 +218,39 @@ namespace PCInfoParser_Server_NET_Forms
                 this.Hide();
                 notifyIcon1.Visible = true;
                 e.Cancel = true;
+            }
+        }
+
+        private async void просмотрЭкспортToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string processName = "PCInfoParser-DB-.exe"; // Замените на название вашего приложения
+
+            if (IsProcessOpen(processName))
+            {
+                Console.WriteLine("Приложение уже открыто.");
+            }
+            else
+            {
+                Console.WriteLine("Приложение не открыто. Открываю...");
+                OpenProcess(processName);
+            }
+        }
+
+        static bool IsProcessOpen(string processName)
+        {
+            Process[] processes = Process.GetProcessesByName(processName);
+            return processes.Length > 0;
+        }
+
+        static void OpenProcess(string processName)
+        {
+            try
+            {
+                Process.Start(processName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Ошибка при открытии приложения: " + ex.Message);
             }
         }
     }

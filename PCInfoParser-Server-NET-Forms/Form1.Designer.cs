@@ -95,9 +95,11 @@ namespace PCInfoParser_Server_NET_Forms
             this.button3.TabIndex = 4;
             this.button3.Text = "Подключиться к MySQL";
             this.button3.UseVisualStyleBackColor = true;
+            this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
             // button4
             // 
+            this.button4.Enabled = false;
             this.button4.Location = new System.Drawing.Point(-1, 152);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(242, 23);
@@ -174,6 +176,7 @@ namespace PCInfoParser_Server_NET_Forms
             this.просмотрЭкспортToolStripMenuItem.Name = "просмотрЭкспортToolStripMenuItem";
             this.просмотрЭкспортToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
             this.просмотрЭкспортToolStripMenuItem.Text = "Просмотр/Экспорт";
+            this.просмотрЭкспортToolStripMenuItem.Click += new System.EventHandler(this.просмотрЭкспортToolStripMenuItem_Click);
             // 
             // textBox1
             // 

@@ -255,12 +255,11 @@ namespace PCInfoParser_Server_NET_Forms
             listener = new TcpListener(IPAddress.Any, port);
             start = true;
             listener.Start();
-            Console.WriteLine($"Server started listening on port {port}.");
             while (start)
             {
                 try { 
                     client = await listener.AcceptTcpClientAsync();
-                    Console.WriteLine($"Client connected from {client.Client.RemoteEndPoint}");
+                    Console.WriteLine($"Клиент подключен с {client.Client.RemoteEndPoint}");
 
                     int clientId = nextClientId++;
                     clients.TryAdd(clientId, client);
@@ -288,7 +287,7 @@ namespace PCInfoParser_Server_NET_Forms
                 if (data.StartsWith("VALIDATION"))
                 {
                     user = data.Split(';');
-                    //if (user[4] == "NeedToGet") user[4] = GetID();
+                    if (user[4] == "NeedToGet") user[4] = connector.LastID(user[3]);
                     await WriteDataAsync(stream, $"VALID;{user[4]}", 10);
                 }
                 else if (data.StartsWith("Lan: ")) lan = data.Replace("Lan: ", "");
@@ -304,7 +303,16 @@ namespace PCInfoParser_Server_NET_Forms
                 }
                 else if (data == "ENDSEND")
                 {
+                    string[] createcommands = MySQLCommand.LoadTableParametras(user[3]);
+                    foreach (string command in createcommands) connector.ExecuteCommand(command);
+
                     string[] commands = MySQLCommand.LoadExecuteParametras(general, smart, user, lan);
+
+                    foreach (string command in commands)
+                    {
+                        if (!connector.ExecuteCommand(command)) Console.WriteLine($"[MySQL] Не удалось отправить {command}");
+                    }
+
                     client.Close();
                 }
                 else
@@ -313,7 +321,7 @@ namespace PCInfoParser_Server_NET_Forms
                 }
             }
             if (!client.Connected)
-                Console.WriteLine($"Client {clientId} disconnected from {client.Client.RemoteEndPoint}");
+                Console.WriteLine($"Клиент {clientId} отключился от {client.Client.RemoteEndPoint}");
         }
 
         private async Task WriteDataAsync(Stream stream, string message, int bytes)
@@ -373,7 +381,7 @@ namespace PCInfoParser_Server_NET_Forms
         {
             if (clients.TryGetValue(clientId, out TcpClient client))
             {
-                Console.WriteLine($"Closing connection with client {clientId}");
+                Console.WriteLine($"Закрытие подключения с клиентом {clientId}");
                 client.Close();
                 clients.TryRemove(clientId, out _);
             }
@@ -381,7 +389,6 @@ namespace PCInfoParser_Server_NET_Forms
 
         public void StopServer()
         {
-            Console.WriteLine("Stopping server...");
             start = false;
             listener.Stop();
             Task.Delay(2000);

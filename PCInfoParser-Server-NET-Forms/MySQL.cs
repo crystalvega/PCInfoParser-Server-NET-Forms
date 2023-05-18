@@ -1,10 +1,8 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using MySqlX.XDevAPI.Relational;
+using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MySql.Data.MySqlClient;
 
 namespace PCInfoParser_Server_NET_Forms
 {
@@ -32,6 +30,47 @@ namespace PCInfoParser_Server_NET_Forms
             }
             return connection_status;
         }
+        public string LastID(string table)
+        {
+            string query = $"SELECT ID FROM {table}_General"; // Замените на ваш запрос SELECT
+
+            try
+            {
+                MySqlCommand command = new MySqlCommand(query, connection);
+                MySqlDataReader reader = command.ExecuteReader();
+
+                List<int> columnValues = new();
+
+
+                while (reader.Read())
+                {
+                    string columnValue = reader.GetString(0); // Получение значения столбца по индексу (0)
+                    columnValues.Add(Convert.ToInt32(columnValue));
+                }
+
+                columnValues = columnValues.Distinct().ToList();
+                columnValues.Sort();
+                
+                int lastvalue = 0;
+
+                foreach(int value in columnValues)
+                {
+                    lastvalue++;
+                    if (value != lastvalue - 1)
+                    {
+                        lastvalue--;
+                        break;
+                    }
+                }
+
+                reader.Close();
+                return lastvalue.ToString();
+            }
+            catch(Exception) 
+            {
+                return "0";
+            }
+        }
         public void Disconnect()
         {
             if(!connection_status) connection.Close();
@@ -50,7 +89,7 @@ namespace PCInfoParser_Server_NET_Forms
             catch (MySqlException ex)
             {
                 // Обработка ошибок подключения к базе данных
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                if (ex.ErrorCode != -2147467259) Console.WriteLine($"An error occurred: {ex.Message}");
             }
             return success;
         }
@@ -58,7 +97,7 @@ namespace PCInfoParser_Server_NET_Forms
 
     internal static class MySQLCommand
     {
-        private static string[] LoadTableParametras(string filename)
+        public static string[] LoadTableParametras(string filename)
         {
             string[] returnvalue = new string[2];
             returnvalue[0] = $@"
@@ -136,16 +175,18 @@ namespace PCInfoParser_Server_NET_Forms
             for (int i = 0; i < diskNumbs; i++)
             {
                 string valuesChartersSet = "";
-                executeCharters.Add($"INSERT INTO `{user[2]}_Disk`(");
+                executeCharters.Add($"INSERT INTO `{user[3]}_Disk`(");
 
-                executeCharters[i] += $"ID`, `";
+                executeCharters[i] += $"`ID`, `";
                 executeCharters[i] += $"Кабинет`, `";
                 executeCharters[i] += $"LAN`, `";
                 executeCharters[i] += $"ФИО`, `";
-                valuesChartersSet += $"'{user[3]}', ";
-                valuesChartersSet += $"'{user[1]}', ";
+                executeCharters[i] += $"Диск`, `";
+                valuesChartersSet += $"'{user[4]}', ";
+                valuesChartersSet += $"'{user[2]}', ";
                 valuesChartersSet += $"'{lan}', ";
-                valuesChartersSet += $"'{user[0]}', ";
+                valuesChartersSet += $"'{user[1]}', ";
+                valuesChartersSet += $"'{i+1}', ";
 
                 for (int i3 = 0; i3 < list.GetLength(1); i3++)
                 {
@@ -162,17 +203,17 @@ namespace PCInfoParser_Server_NET_Forms
 
         private static string GenExecuteParams(string lan, string[] user, string[,] list)
         {
-            string executeCharters = $"INSERT INTO `{user[2]}_General`(";
+            string executeCharters = $"INSERT INTO `{user[3]}_General`(";
             string valuesCharters = "";
 
-            executeCharters += $"ID`, `";
+            executeCharters += $"`ID`, `";
             executeCharters += $"Кабинет`, `";
             executeCharters += $"LAN`, `";
             executeCharters += $"ФИО`, `";
-            valuesCharters += $"'{user[3]}', ";
-            valuesCharters += $"'{user[1]}', ";
+            valuesCharters += $"'{user[4]}', ";
+            valuesCharters += $"'{user[2]}', ";
             valuesCharters += $"'{lan}', ";
-            valuesCharters += $"'{user[0]}', ";
+            valuesCharters += $"'{user[1]}', ";
 
             for (int i = 0; i < list.GetLength(0); i++)
             {
@@ -189,12 +230,10 @@ namespace PCInfoParser_Server_NET_Forms
 
         public static string[] LoadExecuteParametras(string[,] charters, string[,,] disk, string[] user, string lan)
         {
-            List<string> returnvalue = new List<string>();
-
-            string[] createTables = LoadTableParametras(user[2]);
-            foreach (string table in createTables) returnvalue.Add(table);
-
-            returnvalue.Add(GenExecuteParams(lan, user, charters));
+            List<string> returnvalue = new()
+            {
+                GenExecuteParams(lan, user, charters)
+            };
 
             string[] executeDisk = GenExecuteDisk(lan, user, disk);
             foreach (string value in executeDisk) returnvalue.Add(value);
