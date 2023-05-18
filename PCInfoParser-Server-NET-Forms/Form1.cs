@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -220,38 +221,33 @@ namespace PCInfoParser_Server_NET_Forms
                 e.Cancel = true;
             }
         }
-
         private async void просмотрЭкспортToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string processName = "PCInfoParser-DB-.exe"; // Замените на название вашего приложения
+            string processName = "PCInfoParser-DB-Viewer-NET"; // Замените на название вашего приложения
+
 
             if (IsProcessOpen(processName))
             {
-                Console.WriteLine("Приложение уже открыто.");
+                Interaction.AppActivate("PCInfoParser DB Viewer");
             }
             else
             {
-                Console.WriteLine("Приложение не открыто. Открываю...");
-                OpenProcess(processName);
+                try
+                {
+                    Process.Start(processName + ".exe");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Ошибка при открытии средства просмотра базы данных: " + ex.Message);
+                }
             }
+            await Task.Delay(1);
         }
 
         static bool IsProcessOpen(string processName)
         {
             Process[] processes = Process.GetProcessesByName(processName);
             return processes.Length > 0;
-        }
-
-        static void OpenProcess(string processName)
-        {
-            try
-            {
-                Process.Start(processName);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Ошибка при открытии приложения: " + ex.Message);
-            }
         }
     }
 }

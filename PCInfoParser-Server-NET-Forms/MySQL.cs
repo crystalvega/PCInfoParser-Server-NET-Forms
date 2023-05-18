@@ -30,13 +30,44 @@ namespace PCInfoParser_Server_NET_Forms
             }
             return connection_status;
         }
-        public string LastID(string table)
+
+        public bool CheckID(string[] user)
         {
-            string query = $"SELECT ID FROM {table}_General"; // Замените на ваш запрос SELECT
+            string query = $"SELECT ID FROM {user[3]}_Users"; // Замените на ваш запрос SELECT
 
             try
             {
-                MySqlCommand command = new MySqlCommand(query, connection);
+                MySqlCommand command = new(query, connection);
+                MySqlDataReader reader = command.ExecuteReader();
+
+                List<int> columnValues = new();
+
+
+                while (reader.Read())
+                {
+                    string columnValue = reader.GetString(0); // Получение значения столбца по индексу (0)
+                    if (columnValue == user[4])
+                    {
+                        reader.Close();
+                        return true;
+                    }
+                }
+                reader.Close();
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+                public string LastID(string table)
+        {
+            string query = $"SELECT ID FROM {table}_Users"; // Замените на ваш запрос SELECT
+
+            try
+            {
+                MySqlCommand command = new(query, connection);
                 MySqlDataReader reader = command.ExecuteReader();
 
                 List<int> columnValues = new();
@@ -99,14 +130,11 @@ namespace PCInfoParser_Server_NET_Forms
     {
         public static string[] LoadTableParametras(string filename)
         {
-            string[] returnvalue = new string[2];
+            string[] returnvalue = new string[3];
             returnvalue[0] = $@"
         CREATE TABLE `{filename}_General`
         (
             `ID`	VARCHAR(512),
-            `Кабинет`	VARCHAR(512),
-            `LAN`	VARCHAR(512),
-            `ФИО`	VARCHAR(512),
             `Монитор`	VARCHAR(512),
             `Диагональ`	VARCHAR(512),
             `Тип принтера`	VARCHAR(512),
@@ -143,9 +171,6 @@ namespace PCInfoParser_Server_NET_Forms
         CREATE TABLE `{filename}_Disk` 
         (
             `ID`	VARCHAR(512),
-            `Кабинет`	VARCHAR(512),
-            `LAN`	VARCHAR(512),
-            `ФИО`	VARCHAR(512),
             `Диск`	VARCHAR(512),
             `Наименование`	VARCHAR(512),
             `Прошивка`	VARCHAR(512),
@@ -158,9 +183,18 @@ namespace PCInfoParser_Server_NET_Forms
         );
         ";
 
+            returnvalue[2] = $@"
+        CREATE TABLE `{filename}_Users`
+        (
+            `ID`	VARCHAR(512),
+            `Кабинет`	VARCHAR(512),
+            `LAN`	VARCHAR(512),
+            `ФИО`	VARCHAR(512)
+        );
+        ";
             return returnvalue;
         }
-        private static string[] GenExecuteDisk(string lan, string[] user, string[,,] list)
+        private static string[] GenExecuteDisk(string organization, string id, string[,,] list)
         {
             List<string> executeCharters = new List<string>();
 
@@ -175,17 +209,12 @@ namespace PCInfoParser_Server_NET_Forms
             for (int i = 0; i < diskNumbs; i++)
             {
                 string valuesChartersSet = "";
-                executeCharters.Add($"INSERT INTO `{user[3]}_Disk`(");
+                executeCharters.Add($"INSERT INTO `{organization}_Disk`(");
 
                 executeCharters[i] += $"`ID`, `";
-                executeCharters[i] += $"Кабинет`, `";
-                executeCharters[i] += $"LAN`, `";
-                executeCharters[i] += $"ФИО`, `";
-                executeCharters[i] += $"Диск`, `";
-                valuesChartersSet += $"'{user[4]}', ";
-                valuesChartersSet += $"'{user[2]}', ";
-                valuesChartersSet += $"'{lan}', ";
-                valuesChartersSet += $"'{user[1]}', ";
+                
+                executeCharters[i] += $"`Диск`, `";
+                valuesChartersSet += $"'{id}', ";
                 valuesChartersSet += $"'{i+1}', ";
 
                 for (int i3 = 0; i3 < list.GetLength(1); i3++)
@@ -201,19 +230,13 @@ namespace PCInfoParser_Server_NET_Forms
             return executeCharters.ToArray();
         }
 
-        private static string GenExecuteParams(string lan, string[] user, string[,] list)
+        private static string GenExecuteParams(string organization, string id, string[,] list)
         {
-            string executeCharters = $"INSERT INTO `{user[3]}_General`(";
+            string executeCharters = $"INSERT INTO `{organization}_General`(";
             string valuesCharters = "";
 
             executeCharters += $"`ID`, `";
-            executeCharters += $"Кабинет`, `";
-            executeCharters += $"LAN`, `";
-            executeCharters += $"ФИО`, `";
-            valuesCharters += $"'{user[4]}', ";
-            valuesCharters += $"'{user[2]}', ";
-            valuesCharters += $"'{lan}', ";
-            valuesCharters += $"'{user[1]}', ";
+            valuesCharters += $"'{id}', ";
 
             for (int i = 0; i < list.GetLength(0); i++)
             {
@@ -228,14 +251,33 @@ namespace PCInfoParser_Server_NET_Forms
             return executeCharters;
         }
 
-        public static string[] LoadExecuteParametras(string[,] charters, string[,,] disk, string[] user, string lan)
+        public static string GenExecuteUser(string lan, string[] user)
+        {
+            string executeCharters = $"INSERT INTO `{user[3]}_Users`(";
+            string valuesCharters = "";
+
+            executeCharters += $"`ID`, `";
+            executeCharters += $"Кабинет`, `";
+            executeCharters += $"LAN`, `";
+            executeCharters += $"ФИО`";
+            valuesCharters += $"'{user[4]}', ";
+            valuesCharters += $"'{user[2]}', ";
+            valuesCharters += $"'{lan}', ";
+            valuesCharters += $"'{user[1]}');";
+
+            executeCharters += ") VALUES (" + valuesCharters;
+
+            return executeCharters;
+        }
+
+        public static string[] LoadExecuteParametras(string[,] charters, string[,,] disk, string[] user)
         {
             List<string> returnvalue = new()
             {
-                GenExecuteParams(lan, user, charters)
+                GenExecuteParams(user[3], user[4], charters)
             };
 
-            string[] executeDisk = GenExecuteDisk(lan, user, disk);
+            string[] executeDisk = GenExecuteDisk(user[3], user[4], disk);
             foreach (string value in executeDisk) returnvalue.Add(value);
 
             return returnvalue.ToArray();

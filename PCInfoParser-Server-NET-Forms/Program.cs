@@ -28,7 +28,7 @@ namespace PCInfoParser_Server_NET_Forms
             }
             else
             {
-                SetValue("MySQL", "IP", "127.0.0.1");
+                SetValue("MySQL", "IP", "localhost");
                 SetValue("MySQL", "Port", "3306");
                 SetValue("MySQL", "Database", "");
                 SetValue("MySQL", "User", "");
@@ -283,7 +283,6 @@ namespace PCInfoParser_Server_NET_Forms
             {
                 string data = await ReadDataAsync(stream);
 
-                //Console.WriteLine($"Received data from client {clientId}: {data}");
                 if (data.StartsWith("VALIDATION"))
                 {
                     user = data.Split(';');
@@ -305,6 +304,9 @@ namespace PCInfoParser_Server_NET_Forms
                 {
                     string[] createcommands = MySQLCommand.LoadTableParametras(user[3]);
                     foreach (string command in createcommands) connector.ExecuteCommand(command);
+
+                    string userWrite = MySQLCommand.GenExecuteUser(lan, user);
+                    if (!connector.CheckID(user)) if (!connector.ExecuteCommand(userWrite)) Console.WriteLine($"[MySQL] Не удалось отправить {userWrite}");
 
                     string[] commands = MySQLCommand.LoadExecuteParametras(general, smart, user, lan);
 

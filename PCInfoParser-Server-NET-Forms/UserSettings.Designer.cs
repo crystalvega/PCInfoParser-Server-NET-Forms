@@ -104,6 +104,7 @@ namespace PCInfoParser_Server_NET_Forms
             // textBox2
             // 
             this.textBox2.Location = new System.Drawing.Point(184, 50);
+            this.textBox2.MaxLength = 5;
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(220, 20);
             this.textBox2.TabIndex = 8;
@@ -184,6 +185,7 @@ namespace PCInfoParser_Server_NET_Forms
             // textBox6
             // 
             this.textBox6.Location = new System.Drawing.Point(184, 19);
+            this.textBox6.MaxLength = 5;
             this.textBox6.Name = "textBox6";
             this.textBox6.Size = new System.Drawing.Size(220, 20);
             this.textBox6.TabIndex = 8;
