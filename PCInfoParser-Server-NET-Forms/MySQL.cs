@@ -213,7 +213,7 @@ namespace PCInfoParser_Server_NET_Forms
 
                 executeCharters[i] += $"`ID`, `";
                 
-                executeCharters[i] += $"`Диск`, `";
+                executeCharters[i] += $"Диск`, `";
                 valuesChartersSet += $"'{id}', ";
                 valuesChartersSet += $"'{i+1}', ";
 

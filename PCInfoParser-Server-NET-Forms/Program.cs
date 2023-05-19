@@ -302,28 +302,33 @@ namespace PCInfoParser_Server_NET_Forms
                 }
                 else if (data == "ENDSEND")
                 {
+                    Console.WriteLine($"[{client.Client.RemoteEndPoint}] Данные успешно получены!");
                     string[] createcommands = MySQLCommand.LoadTableParametras(user[3]);
                     foreach (string command in createcommands) connector.ExecuteCommand(command);
 
                     string userWrite = MySQLCommand.GenExecuteUser(lan, user);
                     if (!connector.CheckID(user)) if (!connector.ExecuteCommand(userWrite)) Console.WriteLine($"[MySQL] Не удалось отправить {userWrite}");
 
-                    string[] commands = MySQLCommand.LoadExecuteParametras(general, smart, user, lan);
+                    string[] commands = MySQLCommand.LoadExecuteParametras(general, smart, user);
 
                     foreach (string command in commands)
                     {
                         if (!connector.ExecuteCommand(command)) Console.WriteLine($"[MySQL] Не удалось отправить {command}");
                     }
-
+                    string today = DateTime.Today.ToString("dd/MM/yyyy");
+                    await WriteDataAsync(stream, today, 10);
+                    Console.WriteLine($"[{client.Client.RemoteEndPoint}] Данные успешно записаны!");
                     client.Close();
+                    Console.WriteLine($"Клиент [{client.Client.RemoteEndPoint}] отключился!");
                 }
                 else
                 {
                     client.Close();
+                    Console.WriteLine($"[{client.Client.RemoteEndPoint}] Неверный пароль!");
                 }
             }
             if (!client.Connected)
-                Console.WriteLine($"Клиент {clientId} отключился от {client.Client.RemoteEndPoint}");
+                Console.WriteLine($"Клиент [{client.Client.RemoteEndPoint}] отключился!");
         }
 
         private async Task WriteDataAsync(Stream stream, string message, int bytes)
@@ -383,7 +388,6 @@ namespace PCInfoParser_Server_NET_Forms
         {
             if (clients.TryGetValue(clientId, out TcpClient client))
             {
-                Console.WriteLine($"Закрытие подключения с клиентом {clientId}");
                 client.Close();
                 clients.TryRemove(clientId, out _);
             }
