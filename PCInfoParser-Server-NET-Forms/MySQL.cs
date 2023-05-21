@@ -10,7 +10,7 @@ namespace PCInfoParser_Server_NET_Forms
     public class MySQLConnector
     {
         private string connectionString;
-        bool connection_status;
+        public bool connection_status;
         MySqlConnection connection;
         public IniFile ini;
 
