@@ -1,5 +1,4 @@
 ﻿using MySql.Data.MySqlClient;
-using MySqlX.XDevAPI.Relational;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -145,6 +144,7 @@ namespace PCInfoParser_Server_NET_Forms
             `Частота процессора`	VARCHAR(512),
             `Баллы Passmark`	VARCHAR(512),
             `Дата выпуска`	VARCHAR(512),
+            `Температура процессора`	VARCHAR(512),
             `Тип ОЗУ`	VARCHAR(512),
             `ОЗУ, 1 Планка`	VARCHAR(512),
             `ОЗУ, 2 Планка`	VARCHAR(512),
@@ -198,13 +198,13 @@ namespace PCInfoParser_Server_NET_Forms
         {
             List<string> executeCharters = new List<string>();
 
-            int diskNumbs = 0;
+            int diskNumbs = list.GetLength(0);
 
-            for (int i = 0; i < 4; i++)
-            {
-                if (list[i, 0, 1] != "") diskNumbs += 1;
-                else break;
-            }
+            //for (int i = 0; i < 4; i++)
+            //{
+            //    if (list[i, 0, 1] != "") diskNumbs += 1;
+            //    else break;
+            //}
 
             for (int i = 0; i < diskNumbs; i++)
             {
