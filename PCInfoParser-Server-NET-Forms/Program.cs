@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -220,20 +221,6 @@ namespace PCInfoParser_Server_NET_Forms
     }
 
 
-    internal static class Program
-    {
-        /// <summary>
-        /// Главная точка входа для приложения.
-        /// </summary>
-        [STAThread]
-        static int Main()
-        {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
-            return 0;
-        }
-    }
 
     public class AsyncTcpServer
     {
@@ -242,6 +229,7 @@ namespace PCInfoParser_Server_NET_Forms
         public IniFile ini;
         TcpClient client = new();
         public bool start = false;
+        private string checkstart = "";
         private int port;
         private TcpListener listener;
         public string password = "";
@@ -250,12 +238,17 @@ namespace PCInfoParser_Server_NET_Forms
 
         public async void StartAsync()
         {
-            this.port = Convert.ToInt32(ini.GetValue("Server", "Port"));
-            this.password = ini.GetValue("Server", "Password");
-            listener = new TcpListener(IPAddress.Any, port);
-            start = true;
-            listener.Start();
-            while (start)
+            try
+            { 
+                this.port = Convert.ToInt32(ini.GetValue("Server", "Port"));
+                this.password = ini.GetValue("Server", "Password");
+                listener = new TcpListener(IPAddress.Any, port);
+                start = true;
+                listener.Start();
+                checkstart = "true";
+			}
+            catch (Exception) { checkstart = "false"; }
+			while (start)
             {
                 try { 
                     client = await listener.AcceptTcpClientAsync();
@@ -382,7 +375,12 @@ namespace PCInfoParser_Server_NET_Forms
             }
         }
 
-
+        public bool GetStatus()
+        {
+            while(checkstart == "")
+            { }
+            return Convert.ToBoolean(checkstart);
+        }
 
         public void CloseClientConnection(int clientId)
         {
@@ -402,9 +400,8 @@ namespace PCInfoParser_Server_NET_Forms
             {
                 CloseClientConnection(clientId);
             }
-            
-
-        }
+            checkstart = "";
+		}
     }
 
 
@@ -519,6 +516,30 @@ namespace PCInfoParser_Server_NET_Forms
             }
 
             return plainTextArray;
+        }
+    }
+    internal static class Program
+    {
+		static bool IsProcessOpen(string processName)
+		{
+			Process[] processes = Process.GetProcessesByName(processName);
+			return processes.Length > 1;
+		}
+		/// <summary>
+		/// Главная точка входа для приложения.
+		/// </summary>
+		[STAThread]
+        static int Main()
+        {
+            if (IsProcessOpen("PCInfoParser-Server-NET-Forms"))
+            {
+				MessageBox.Show("Приложение уже открыто!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return 1;
+            }
+			Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Form1());
+            return 0;
         }
     }
 }

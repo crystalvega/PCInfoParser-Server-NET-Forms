@@ -65,7 +65,7 @@ namespace PCInfoParser_Server_NET_Forms
             {
                 Change(1);
                 if (Convert.ToBoolean(this.ini.GetValue("App", "ConnectMySQL"))) button3_Click(sender, e);
-                if (ini.GetValue("Server", "Port") != "" && ini.GetValue("Server", "Password")!= "")
+                if (ini.GetValue("Server", "Port") != "" && ini.GetValue("Server", "Password")!= "" && connector.connection_status)
                 {
                     Change(0);
                     if (Convert.ToBoolean(this.ini.GetValue("App", "ServerStart")))
@@ -108,6 +108,8 @@ namespace PCInfoParser_Server_NET_Forms
             Console.WriteLine("[Server] Запуск сервера...");
             server_status = "Запуск...";
             server.StartAsync();
+            if(server.GetStatus())
+            { 
             server_status = "Запущен";
             Console.WriteLine($"[Server] Сервер запущен на порте {ini.GetValue("Server", "Port")}!");
             button1.Enabled = false;
@@ -115,7 +117,19 @@ namespace PCInfoParser_Server_NET_Forms
             button3.Enabled = false;
             button4.Enabled = false;
             userSettings.Change(2);
-        }
+			}
+            else
+            {
+				server_status = "Выключен";
+				Console.WriteLine("[Server] Не удалось запустить сервер!");
+				button1.Enabled = true;
+				button2.Enabled = false;
+				button3.Enabled = false;
+				button4.Enabled = true;
+				Change(0);
+				userSettings.Change(1);
+			}
+		}
 
         private void button2_Click(object sender, EventArgs e)
         {
@@ -158,7 +172,7 @@ namespace PCInfoParser_Server_NET_Forms
                 button4.Enabled = false;
                 Console.WriteLine("[MySQL] Не удалось подключиться к MySQL!");
                 mysql_status = "Отключено";
-                Change(2);
+                Change(1);
                 userSettings.Change(0);
             }
         }
@@ -198,7 +212,6 @@ namespace PCInfoParser_Server_NET_Forms
             if (e.Button == MouseButtons.Left)
             {
                 this.Show();
-                notifyIcon1.Visible = false;
                 this.WindowState = FormWindowState.Normal;
                 this.Activate();
             }
@@ -217,21 +230,12 @@ namespace PCInfoParser_Server_NET_Forms
             if (!close)
             {
                 this.Hide();
-                notifyIcon1.Visible = true;
                 e.Cancel = true;
             }
         }
         private async void просмотрЭкспортToolStripMenuItem_Click(object sender, EventArgs e)
         {
             string processName = "PCInfoParser-DB-Viewer-NET"; // Замените на название вашего приложения
-
-
-            if (IsProcessOpen(processName))
-            {
-                Interaction.AppActivate("PCInfoParser DB Viewer");
-            }
-            else
-            {
                 try
                 {
                     Process.Start(processName + ".exe");
@@ -240,14 +244,13 @@ namespace PCInfoParser_Server_NET_Forms
                 {
                     Console.WriteLine("Ошибка при открытии средства просмотра базы данных: " + ex.Message);
                 }
-            }
-            await Task.Delay(1);
-        }
+			await Task.Delay(1);
+		}
 
-        static bool IsProcessOpen(string processName)
-        {
-            Process[] processes = Process.GetProcessesByName(processName);
-            return processes.Length > 0;
-        }
-    }
+		private void mySQLToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+            if (File.Exists("PCInfoParser-DB-Viewer-NET.exe")) просмотрЭкспортToolStripMenuItem.Enabled = true;
+            else просмотрЭкспортToolStripMenuItem.Enabled = false;
+		}
+	}
 }
